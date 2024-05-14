@@ -7,14 +7,49 @@
 * Related Document: See README.md
 *
 *
+*******************************************************************************
+* Copyright 2024, Cypress Semiconductor Corporation (an Infineon company) or
+* an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
+*
+* This software, including source code, documentation and related
+* materials ("Software") is owned by Cypress Semiconductor Corporation
+* or one of its affiliates ("Cypress") and is protected by and subject to
+* worldwide patent protection (United States and foreign),
+* United States copyright laws and international treaty provisions.
+* Therefore, you may use this Software only as provided in the license
+* agreement accompanying the software package from which you
+* obtained this Software ("EULA").
+* If no EULA applies, Cypress hereby grants you a personal, non-exclusive,
+* non-transferable license to copy, modify, and compile the Software
+* source code solely for use in connection with Cypress's
+* integrated circuit products.  Any reproduction, modification, translation,
+* compilation, or representation of this Software except as specified
+* above is prohibited without the express written permission of Cypress.
+*
+* Disclaimer: THIS SOFTWARE IS PROVIDED AS-IS, WITH NO WARRANTY OF ANY KIND,
+* EXPRESS OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, NONINFRINGEMENT, IMPLIED
+* WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE. Cypress
+* reserves the right to make changes to the Software without notice. Cypress
+* does not assume any liability arising out of the application or use of the
+* Software or any product or circuit described in the Software. Cypress does
+* not authorize its products for use in any products where a malfunction or
+* failure of the Cypress product may reasonably be expected to result in
+* significant property damage, injury or death ("High Risk Product"). By
+* including Cypress's product in a High Risk Product, the manufacturer
+* of such system or application assumes all risk of such use and in doing
+* so agrees to indemnify Cypress against all liability.
 *******************************************************************************/
-#include "imu.h"
 
-#include "mtb_bmi160.h"
-#include "mtb_bmx160.h"
+#include "imu.h"
 #include "cyhal.h"
 #include "cybsp.h"
-
+#ifdef CY_BMI_270_IMU_I2C
+#include "mtb_bmi270.h"
+#elif CY_BMX_160_IMU_SPI
+#include "mtb_bmx160.h"
+#else
+#include "mtb_bmi160.h"
+#endif
 #include "config.h"
 
 
@@ -30,6 +65,11 @@
 #endif
 
 #ifdef CY_BMI_160_IMU_I2C
+    #define IMU_I2C_MASTER_DEFAULT_ADDRESS  0
+    #define IMU_I2C_FREQUENCY               1000000
+#endif
+
+#ifdef CY_BMI_270_IMU_I2C
     #define IMU_I2C_MASTER_DEFAULT_ADDRESS  0
     #define IMU_I2C_FREQUENCY               1000000
 #endif
@@ -63,6 +103,15 @@
     /* BMI160 driver structures */
     mtb_bmi160_data_t data;
     mtb_bmi160_t sensor_bmi160;
+
+    /* I2C object for data transmission */
+    cyhal_i2c_t i2c;
+#endif
+
+#ifdef CY_BMI_270_IMU_I2C
+    /* BMI270 driver structures */
+    mtb_bmi270_data_t data;
+    mtb_bmi270_t sensor_bmi270;
 
     /* I2C object for data transmission */
     cyhal_i2c_t i2c;
@@ -197,6 +246,50 @@ cy_rslt_t imu_init(void)
     bmi160_set_sens_conf(&(sensor_bmi160.sensor));
 #endif
 
+#ifdef CY_BMI_270_IMU_I2C
+    struct bmi2_sens_config config = {0};
+    /* Configure the I2C mode, the address, and the data rate */
+    cyhal_i2c_cfg_t i2c_config =
+    {
+            CYHAL_I2C_MODE_MASTER,
+            IMU_I2C_MASTER_DEFAULT_ADDRESS,
+            IMU_I2C_FREQUENCY
+    };
+
+    /* Initialize I2C for IMU communication */
+    result = cyhal_i2c_init(&i2c, CYBSP_I2C_SDA, CYBSP_I2C_SCL, NULL);
+    if(CY_RSLT_SUCCESS != result)
+    {
+        return result;
+    }
+
+    /* Configure the I2C */
+    result = cyhal_i2c_configure(&i2c, &i2c_config);
+    if(CY_RSLT_SUCCESS != result)
+    {
+        return result;
+    }
+
+    /* Initialize the IMU */
+    result = mtb_bmi270_init_i2c(&sensor_bmi270, &i2c, MTB_BMI270_ADDRESS_DEFAULT);
+    if(CY_RSLT_SUCCESS != result)
+    {
+        return result;
+    }
+
+    /* Set the default configuration for the BMI270 */
+    result = mtb_bmi270_config_default(&sensor_bmi270);
+    if(CY_RSLT_SUCCESS != result)
+    {
+        return result;
+    }
+
+    /* Set the output data rate and range of the accelerometer */
+    config.type = BMI2_ACCEL;
+    config.cfg.acc.odr = BMI2_ACC_ODR_50HZ;
+    config.cfg.acc.range = BMI2_ACC_RANGE_8G;
+    result = bmi2_set_sensor_config(&config, 1, &(sensor_bmi270.sensor));
+#endif
     imu_flag = false;
 
     /* Timer for data collection */
@@ -305,26 +398,50 @@ void imu_interrupt_handler(void *callback_arg, cyhal_timer_event_t event)
 void imu_get_data(float *imu_data)
 {
     /* Read data from IMU sensor */
-    cy_rslt_t result;
 #ifdef CY_BMX_160_IMU_SPI
+    cy_rslt_t result;
     result = mtb_bmx160_read(&sensor_bmx160, &data);
-#endif
-#ifdef CY_BMI_160_IMU_SPI
-    result = mtb_bmi160_read(&sensor_bmi160, &data);
-#endif
-#ifdef CY_BMI_160_IMU_I2C
-    result = mtb_bmi160_read(&sensor_bmi160, &data);
-#endif
     if (CY_RSLT_SUCCESS != result)
     {
         CY_ASSERT(0);
     }
+#endif
+#ifdef CY_BMI_160_IMU_SPI
+    cy_rslt_t result;
+    result = mtb_bmi160_read(&sensor_bmi160, &data);
+    if (CY_RSLT_SUCCESS != result)
+    {
+        CY_ASSERT(0);
+    }
+#endif
+#ifdef CY_BMI_160_IMU_I2C
+    cy_rslt_t result;
+    result = mtb_bmi160_read(&sensor_bmi160, &data);
+    if (CY_RSLT_SUCCESS != result)
+    {
+        CY_ASSERT(0);
+    }
+#endif
+#ifdef CY_BMI_270_IMU_I2C
+    cy_rslt_t result;
+    result = mtb_bmi270_read(&sensor_bmi270, &data);
+    if (CY_RSLT_SUCCESS != result)
+    {
+        CY_ASSERT(0);
+    }
+#endif
 
 #ifdef CY_IMU_SPI
     imu_data[0] = ((float)data.accel.y) / (float)0x1000;
     imu_data[1] = ((float)data.accel.x) / (float)0x1000;
     imu_data[2] = ((float)data.accel.z) / (float)0x1000;
-#else
+#endif
+#ifdef CY_IMU_BMI270
+    imu_data[0] = ((float)data.sensor_data.acc.x) / (float)0x1000;
+    imu_data[1] = ((float)data.sensor_data.acc.y) / (float)0x1000;
+    imu_data[2] = ((float)data.sensor_data.acc.z) / (float)0x1000;
+#endif
+#ifdef CY_IMU_I2C
     imu_data[0] = ((float)data.accel.x) / (float)0x1000;
     imu_data[1] = ((float)data.accel.y) / (float)0x1000;
     imu_data[2] = ((float)data.accel.z) / (float)0x1000;

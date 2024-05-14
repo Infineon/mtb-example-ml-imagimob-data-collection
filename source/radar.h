@@ -1,7 +1,11 @@
 /******************************************************************************
-* File Name:   streaming.h
+* File Name:   radar.h
 *
-* Description: This file contains basic utilities used by the code example.
+* Description: This file contains the function prototypes and constants used
+*   in radar.c.
+*
+* Related Document: See README.md
+*
 *
 *******************************************************************************
 * Copyright 2024, Cypress Semiconductor Corporation (an Infineon company) or
@@ -36,21 +40,21 @@
 * so agrees to indemnify Cypress against all liability.
 *******************************************************************************/
 
-#include "cy_result.h"
-#include "cy_utils.h"
-#include "mtb_data_streaming.h"
+#ifndef RADAR_H_
+#define RADAR_H_
 
+#include "cy_result.h"
+#include "stdbool.h"
+#include "resource_map.h"
+
+/******************************************************************************
+ * Global Variables
+ *****************************************************************************/
+cy_rslt_t radar_init(void);
 /*******************************************************************************
 * Function Prototypes
 *******************************************************************************/
-void streaming_init(mtb_data_streaming_interface_t* stream);
+extern volatile bool radar_flag;
+void radar_get_data(int16_t *radar_data);
 
-static inline void HALT_ON_ERROR(cy_rslt_t result)
-{
-    cy_rslt_decode_t decoded;
-    decoded.raw = result;
-    if (CY_RSLT_SUCCESS != decoded.raw)
-    {
-        CY_HALT();
-    }
-}
+#endif /* RADAR_H_ */

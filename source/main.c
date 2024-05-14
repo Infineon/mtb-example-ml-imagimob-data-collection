@@ -8,7 +8,7 @@
 *
 *
 *******************************************************************************
-* Copyright 2021-2022, Cypress Semiconductor Corporation (an Infineon company) or
+* Copyright 2024, Cypress Semiconductor Corporation (an Infineon company) or
 * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
 *
 * This software, including source code, documentation and related
@@ -46,6 +46,9 @@
 
 #include "imu.h"
 #include "audio.h"
+#include "bmm.h"
+#include "pressure.h"
+#include "radar.h"
 #include "config.h"
 #include "streaming.h"
 
@@ -54,6 +57,9 @@
 ********************************************************************************/
 volatile bool pdm_pcm_flag;
 volatile bool imu_flag;
+volatile bool DPS_flag;
+volatile bool bmm_flag;
+volatile bool radar_flag;
 volatile bool send_data = false;
 
 /*******************************************************************************
@@ -96,9 +102,9 @@ int main(void)
     __enable_irq();
 
     /* Setup button to press, to initiate data transfer */
-    cyhal_gpio_init(CYBSP_USER_BTN1, CYHAL_GPIO_DIR_INPUT, CYHAL_GPIO_DRIVE_NONE, 0);
-    cyhal_gpio_register_callback(CYBSP_USER_BTN1, &cb_data);
-    cyhal_gpio_enable_event(CYBSP_USER_BTN1, CYHAL_GPIO_IRQ_FALL, 3, true);
+    cyhal_gpio_init(CYBSP_USER_BTN1, CYHAL_GPIO_DIR_INPUT, CYBSP_USER_BTN_DRIVE, 1);
+    cyhal_gpio_register_callback(CYBSP_USER_BTN, &cb_data);
+    cyhal_gpio_enable_event(CYBSP_USER_BTN, CYHAL_GPIO_IRQ_FALL, 3, true);
 
     /* Initialize the streaming interface */
     mtb_data_streaming_interface_t  stream;
@@ -120,6 +126,33 @@ int main(void)
 
     /* Configure PDM, PDM clocks, and PDM event */
     result = pdm_init();
+#endif
+
+#if COLLECTION_MODE_SELECT == BMM_COLLECTION
+    /* Initialize IMU transmit buffers */
+    uint8_t transmit_bmm[4 * bmm_AXIS] = {0};
+    float *bmm_raw_data = (float*) transmit_bmm;
+
+    /* Start the imu and timer */
+    result = bmm_init();
+#endif
+
+#if COLLECTION_MODE_SELECT == DPS_COLLECTION
+    int8 val = 0;
+    /* Initialize Pressure transmit buffers */
+    uint8_t transmit_DPS[4 * 2]={0};
+    float *dps_raw_data = (float*) transmit_DPS;
+    /* Configure DPS sensor */
+    result = DPS_init();
+#endif
+
+#if COLLECTION_MODE_SELECT == RADAR_COLLECTION
+    /* Initialize IMU transmit buffers */
+    uint8_t transmit_radar[300] = {0};
+    int16_t *radar_raw_data = (int16_t*) transmit_radar;
+
+    /* Start the imu and timer */
+    result = radar_init();
 #endif
 
     /* Initialization failed */
@@ -156,6 +189,43 @@ int main(void)
             pdm_preprocessing_feed(pdm_raw_data);
             /* Transmit data over UART */
             mtb_data_streaming_send(&stream, transmit_pdm, sizeof(transmit_pdm), NULL);
+        }
+#endif
+
+#if COLLECTION_MODE_SELECT == BMM_COLLECTION
+        if(true == bmm_flag)
+        {
+            bmm_flag= false;
+            /* Store IMU data */
+            bmm_get_data(bmm_raw_data);
+
+            /* Transmit data over UART */
+            mtb_data_streaming_send(&stream, transmit_bmm, sizeof(transmit_bmm), NULL);
+        }
+#endif
+
+#if COLLECTION_MODE_SELECT == DPS_COLLECTION
+        if(true == DPS_flag)
+        {
+            DPS_flag = false;
+            /* Store Pressure data */
+            val = dps_get_data(dps_raw_data);
+            if(1 == val)
+            {
+                /* Transmit data over UART */
+                mtb_data_streaming_send(&stream, transmit_DPS, sizeof(transmit_DPS), NULL);
+            }
+        }
+#endif
+
+#if COLLECTION_MODE_SELECT == RADAR_COLLECTION
+        if(true == radar_flag)
+        {
+            radar_flag = false;
+            /* Store PDM data */
+            radar_get_data(radar_raw_data);
+            /* Transmit data over UART */
+            mtb_data_streaming_send(&stream, transmit_radar, sizeof(transmit_radar), NULL);
         }
 #endif
     }

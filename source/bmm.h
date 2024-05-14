@@ -1,7 +1,10 @@
 /******************************************************************************
-* File Name:   streaming.h
+* File Name:   bmm.h
 *
-* Description: This file contains basic utilities used by the code example.
+* Description: This file contains the function prototypes and constants used
+*   in bmm.c.
+*
+* Related Document: See README.md
 *
 *******************************************************************************
 * Copyright 2024, Cypress Semiconductor Corporation (an Infineon company) or
@@ -36,21 +39,27 @@
 * so agrees to indemnify Cypress against all liability.
 *******************************************************************************/
 
-#include "cy_result.h"
-#include "cy_utils.h"
-#include "mtb_data_streaming.h"
+#ifndef SOURCE_BMM_H_
+#define SOURCE_BMM_H_
 
+#include "cy_result.h"
+#include "stdbool.h"
+
+/******************************************************************************
+ * Global Variables
+ *****************************************************************************/
+extern volatile bool bmm_flag;
+
+/******************************************************************************
+ * Macros
+ *****************************************************************************/
+#define bmm_AXIS 3
 /*******************************************************************************
 * Function Prototypes
 *******************************************************************************/
-void streaming_init(mtb_data_streaming_interface_t* stream);
+cy_rslt_t bmm_init(void);
+void bmm_get_data(float *bmm_data);
 
-static inline void HALT_ON_ERROR(cy_rslt_t result)
-{
-    cy_rslt_decode_t decoded;
-    decoded.raw = result;
-    if (CY_RSLT_SUCCESS != decoded.raw)
-    {
-        CY_HALT();
-    }
-}
+
+
+#endif /* SOURCE_BMM_H_ */

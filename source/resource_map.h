@@ -1,7 +1,10 @@
 /******************************************************************************
-* File Name:   streaming.h
+* File Name: resource_map.h
 *
-* Description: This file contains basic utilities used by the code example.
+* Description: This file defines the SPI and GPIO pin map for all the supported kits.
+*
+* Related Document: See README.md
+*
 *
 *******************************************************************************
 * Copyright 2024, Cypress Semiconductor Corporation (an Infineon company) or
@@ -36,21 +39,19 @@
 * so agrees to indemnify Cypress against all liability.
 *******************************************************************************/
 
-#include "cy_result.h"
-#include "cy_utils.h"
-#include "mtb_data_streaming.h"
+#ifndef RESOURCE_MAP_H_
+#define RESOURCE_MAP_H_
+#include "cybsp.h"
 
-/*******************************************************************************
-* Function Prototypes
-*******************************************************************************/
-void streaming_init(mtb_data_streaming_interface_t* stream);
+#ifdef TARGET_APP_CY8CKIT_062S2_AI
 
-static inline void HALT_ON_ERROR(cy_rslt_t result)
-{
-    cy_rslt_decode_t decoded;
-    decoded.raw = result;
-    if (CY_RSLT_SUCCESS != decoded.raw)
-    {
-        CY_HALT();
-    }
-}
+#define PIN_XENSIV_BGT60TRXX_SPI_SCLK       CYBSP_RSPI_CLK
+#define PIN_XENSIV_BGT60TRXX_SPI_MOSI       CYBSP_RSPI_MOSI
+#define PIN_XENSIV_BGT60TRXX_SPI_MISO       CYBSP_RSPI_MISO
+#define PIN_XENSIV_BGT60TRXX_SPI_CSN        CYBSP_RSPI_CS
+#define PIN_XENSIV_BGT60TRXX_IRQ            CYBSP_RSPI_IRQ
+#define PIN_XENSIV_BGT60TRXX_RSTN           CYBSP_RXRES_L
+
+#endif
+
+#endif 

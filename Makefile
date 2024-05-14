@@ -7,7 +7,7 @@
 #
 ################################################################################
 # \copyright
-# Copyright 2018-2022, Cypress Semiconductor Corporation (an Infineon company)
+# Copyright 2024, Cypress Semiconductor Corporation (an Infineon company)
 # SPDX-License-Identifier: Apache-2.0
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -70,13 +70,19 @@ CONFIG=Debug
 # If set to "true" or "1", display full command-lines when building.
 VERBOSE=
 
+ifeq (APP_CY8CKIT-062S2-AI, $(TARGET))
+SHIELD_DATA_COLLECTION=AI_KIT
+endif
+
+ifeq (APP_CY8CKIT-062S2-43012, $(TARGET))
 # Shield used to gather IMU data
 #
 # TFT_SHIELD              -- Using the 028-TFT shield
-# EDP_SHIELD		      -- Using the 028-EPD shield
-# SENSE_SHIELD            -- Using the 028-SENSE shield rev**
-# SENSE_SHIELD_v2         -- Using the 028-SENSE shield rev*A or later
+# EPD_SHIELD		      -- Using the 028-EPD shield
+# SENSE_SHIELD            -- Using the 028-SENSE shield rev** or rev*A
+# SENSE_SHIELD_v2         -- Using the 028-SENSE shield rev*B or later
 SHIELD_DATA_COLLECTION=SENSE_SHIELD
+endif
 ################################################################################
 # Advanced Configuration
 ################################################################################
@@ -108,23 +114,28 @@ INCLUDES=
 
 # Add additional defines to the build process (without a leading -D).
 DEFINES=
-
 # Depending which shield is used for data collection, add specific DEFINE
 ifeq (TFT_SHIELD, $(SHIELD_DATA_COLLECTION))
 DEFINES+=CY_BMI_160_IMU_I2C=1
+DEFINES+=CY_IMU_I2C=1
 endif
 ifeq (EPD_SHIELD, $(SHIELD_DATA_COLLECTION))
 DEFINES+=CY_BMI_160_IMU_I2C=1
+DEFINES+=CY_IMU_I2C=1
 endif
 ifeq (SENSE_SHIELD, $(SHIELD_DATA_COLLECTION))
 DEFINES+=CY_BMX_160_IMU_SPI=1
 DEFINES+=CY_IMU_SPI=1
+DEFINES+=BMI160_CHIP_ID=UINT8_C\(0xD8\)
 endif
 ifeq (SENSE_SHIELD_v2, $(SHIELD_DATA_COLLECTION))
 DEFINES+=CY_BMI_160_IMU_SPI=1
 DEFINES+=CY_IMU_SPI=1
 endif
-
+ifeq (AI_KIT, $(SHIELD_DATA_COLLECTION))
+DEFINES+=CY_BMI_270_IMU_I2C=1
+DEFINES+=CY_IMU_BMI270=1
+endif
 # Select softfp or hardfp floating point. Default is softfp.
 VFP_SELECT=
 
@@ -156,15 +167,31 @@ LDLIBS=
 LINKER_SCRIPT=
 
 # Custom pre-build commands to run.
-PREBUILD=
-PREBUILD+=rm -rf bmi160;
-PREBUILD+=mkdir bmi160/;
-PREBUILD+=cp $(SEARCH_BMI160_driver)/bmi160* bmi160/;
-PREBUILD+=cp $(SEARCH_BMI160_driver)/LICENSE bmi160/;
-ifeq (SENSE_SHIELD, $(SHIELD_DATA_COLLECTION))
-PREBUILD+=sed -i='' 's/UINT8_C(0xD1)/UINT8_C(0xD8)/' bmi160/bmi160_defs.h;
+ifneq (AI_KIT, $(SHIELD_DATA_COLLECTION))
+PREBUILD+=$(SEARCH_sensor-orientation-bmx160)/bmx160_fix.bash "$(SEARCH_BMI160_driver)/bmi160_defs.h"
 endif
-CY_IGNORE+=$(SEARCH_BMI160_driver)
+
+# Exclude redundant files based on shield selection
+ifeq (TFT_SHIELD, $(SHIELD_DATA_COLLECTION))
+CY_IGNORE+=$(SEARCH_sensor-motion-bmi270) $(SEARCH_sensor-orientation-bmx160) \
+        $(SEARCH_BMI270_SensorAPI) $(SEARCH_BMM150-Sensor-API)
+endif
+ifeq (EPD_SHIELD, $(SHIELD_DATA_COLLECTION))
+CY_IGNORE+=$(SEARCH_sensor-motion-bmi270) $(SEARCH_sensor-orientation-bmx160) \
+        $(SEARCH_BMI270_SensorAPI) $(SEARCH_BMM150-Sensor-API)
+endif
+ifeq (SENSE_SHIELD, $(SHIELD_DATA_COLLECTION))
+CY_IGNORE+=$(SEARCH_sensor-motion-bmi270) $(SEARCH_sensor-motion-bmi160) \
+        $(SEARCH_BMI270_SensorAPI)
+endif
+ifeq (SENSE_SHIELD_v2, $(SHIELD_DATA_COLLECTION))
+CY_IGNORE+=$(SEARCH_sensor-motion-bmi270) $(SEARCH_sensor-orientation-bmx160) \
+        $(SEARCH_BMI270_SensorAPI) $(SEARCH_BMM150-Sensor-API)
+endif
+ifeq (AI_KIT, $(SHIELD_DATA_COLLECTION))
+CY_IGNORE+=$(SEARCH_sensor-motion-bmi160) $(SEARCH_sensor-orientation-bmx160) \
+        $(SEARCH_BMI160_driver) $(SEARCH_BMM150-Sensor-API)
+endif
 
 # Custom post-build commands to run.
 POSTBUILD=

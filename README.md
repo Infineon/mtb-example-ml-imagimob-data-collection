@@ -1,6 +1,6 @@
 # Machine learning: Imagimob data collection
 
-This code example demonstrates how to collect data using [Imagimob's Capture Server](https://bitbucket.org/imagimob/captureserver/src/master/) to train a model within [Imagimob Studio](https://www.imagimob.com/products). The code example supports collecting data from two different sources - data can be collected from an IMU or a digital microphone using pulse-density modulation to pulse-code modulation (PDM/PCM). The data is transmitted using UART to the capture server, where it stores it as a .data file for IMU or a .wav file for PDM/PCM data. The data can then be used in the Human Activity detection or Baby Crying detection [Imagimob starter projects](https://developer.imagimob.com/getting-started/starter-project) or to generate a new model. To deploy an Imagimob model onto an Infineon embedded device see the [Imagimob MTBML deployment](https://github.com/Infineon/mtb-example-ml-imagimob-mtbml-deploy) and [Imagimob deployment](https://github.com/Infineon/mtb-example-ml-imagimob-deploy) code examples.
+This code example demonstrates how to collect data using [Imagimob's Capture Server](https://bitbucket.org/imagimob/captureserver/src/master/) to train a model within [Imagimob Studio](https://www.imagimob.com/products). The code example supports collecting data from six different sources: IMU (BMI160/BMX160), digital microphone (PDM-PCM) on the CY8CKIT-062S2-43102 with the sheild, and IMU (BMI270), digital microphone (PDM-PCM), magnetometer (BMM350), pressure sensor (DPS368), and radar sensor (BGT60TR13C) on the CY8CKIT-62S2-AI. The data is transmitted using UART to the capture server, where it stores it as a .data file for IMU or a .wav file for PDM/PCM data. The data can then be used in the Human Activity detection or Baby Crying detection [Imagimob starter projects](https://developer.imagimob.com/getting-started/starter-project) or to generate a new model. To deploy an Imagimob model onto an Infineon embedded device see the [Imagimob MTBML deployment](https://github.com/Infineon/mtb-example-ml-imagimob-mtbml-deploy) and [Imagimob deployment](https://github.com/Infineon/mtb-example-ml-imagimob-deploy) code examples.
 
 [View this README on GitHub.](https://github.com/Infineon/mtb-example-ml-imagimob-data-collection)
 
@@ -10,7 +10,7 @@ This code example demonstrates how to collect data using [Imagimob's Capture Ser
 
 - [ModusToolbox&trade;](https://www.infineon.com/modustoolbox) v3.1 or later (tested with v3.1)
 - Programming language: C
-- Associated parts: [PSoC&trade; 62S2 Wi-Fi Bluetooth&reg; Pioneer Kit](https://www.infineon.com/CY8CKIT-062S2-43012) (`CY8CKIT-062S2-43012`) + [IoT Sense Expansion Kit](https://www.infineon.com/cms/en/product/evaluation-boards/cy8ckit-028-sense)
+- Associated parts: [PSoC&trade; 62S2 Wi-Fi Bluetooth&reg; Pioneer Kit](https://www.infineon.com/CY8CKIT-062S2-43012) (`CY8CKIT-062S2-43012`) + [IoT Sense Expansion Kit](https://www.infineon.com/cms/en/product/evaluation-boards/cy8ckit-028-sense) and [AIROC&trade; CYW43439 Wi-Fi & Bluetooth&reg; combo chip](https://www.infineon.com/cms/en/product/wireless-connectivity/airoc-wi-fi-plus-bluetooth-combos/wi-fi-4-802.11n/cyw43439)
 - PSoC&trade; 6 board support package (BSP) minimum required version: 4.0.0
 
 
@@ -23,11 +23,16 @@ This code example demonstrates how to collect data using [Imagimob's Capture Ser
 ## Supported kits (make variable 'TARGET')
 
 - [PSoC&trade; 62S2 Wi-Fi Bluetooth&reg; Pioneer Kit](https://www.infineon.com/CY8CKIT-062S2-43012) (`CY8CKIT-062S2-43012`) – Default value of `TARGET`
+- [PSoC&trade; 6 AI Evaluation Kit](https://www.infineon.com/CY8CKIT-062S2-AI) (`CY8CKIT-062S2-AI`)
 
 A shield is also required to run this code example. The following shields are supported:
 - [IoT Sense Expansion Kit](https://www.infineon.com/cms/en/product/evaluation-boards/cy8ckit-028-sense) (`CY8CKIT-028-SENSE`)
 - [TFT Display Shield Board](https://www.infineon.com/cms/en/product/evaluation-boards/cy8ckit-028-tft) (`CY8CKIT-028-TFT`)
 - [CY8CKIT-028-EPD](https://www.infineon.com/cms/en/product/evaluation-boards/cy8ckit-028-epd) (`CY8CKIT-028-TFT`)
+
+> **Note:** For the CY8CKIT-062S2-AI, shield is not needed.
+>
+> BMM350 sensor and Radar sensor Data collection only supported on CY8CKIT-062S2-AI.
 
 ## Hardware setup
 
@@ -154,14 +159,18 @@ For more details, see the [ModusToolbox&trade; tools package user guide](https:/
 
 ## Operation
 
-1. Connect the board to your PC using the provided USB cable through the KitProg3 USB connector. The example is set up to use the CY8CKIT-028-SENSE shield.
-   If using the CY8CKIT-028-TFT shield, change `SHIELD_DATA_COLLECTION=TFT_SHIELD` in the Makefile.
-   If using the CY8CKIT-028-EPD shield, change `SHIELD_DATA_COLLECTION=EPD_SHIELD` in the Makefile.
+1. Connect the board to your PC using the provided USB cable through the KitProg3 USB connector. TThe example is set up to use the CY8CKIT-062S2-AI.
+
+   If you are using the CY8CKIT-062S2-43012, update the `SHIELD_DATA_COLLECTION` variable corresponding to `APP_CY8CKIT-062S2-43012` in the *Makefile*.
+   
+   - if using the CY8CKIT-028-TFT shield, change to `SHIELD_DATA_COLLECTION=TFT_SHIELD` in the Makefile.
+   - if using the CY8CKIT-028-EPD shield, change to `SHIELD_DATA_COLLECTION=EPD_SHIELD` in the Makefile.
+   - if using the CY8CKIT-028-SENSE shield, selection depends on kit version:
 
    To check the version of CY8CKIT-028-SENSE, locate the sticker on the bottom of the shield's box which indicates the revision.
 
-   - If the shield is Rev "**", use `SHIELD_DATA_COLLECTION=SENSE_SHIELD`.
-   - If the shield is Rev "*A", use `SHIELD_DATA_COLLECTION=SENSE_SHIELD_v2`.
+   - If the shield is Rev "**" or "*A", use `SHIELD_DATA_COLLECTION=SENSE_SHIELD`.
+   - If the shield is Rev "*B" or later, use `SHIELD_DATA_COLLECTION=SENSE_SHIELD_v2`.
 
 2. Program the board using one of the following:
 
@@ -238,7 +247,67 @@ For more details, see the [ModusToolbox&trade; tools package user guide](https:/
 
 21. All the data is stored in the following directory *{Imagimob Capture Server cloned repo}/captureserver/examples/generic/data*. Each sample is stored in a folder with a date and time stamp, the folder includes the captured data as a .wav file.
 
-22. Import the data into the Imagimob Studio. For more information, see the Imagimob's [Bring your own data](https://developer.imagimob.com/data-importing) documentation.
+22. The code example supports collecting Magnetometer data. To configure the application to collect Magnetometer data open source/config.h and set `INFERENCE_MODE_SELECT = BMM_COLLECTION`.
+> **Note:** Magnetometer data collection is supported only on CY8CKIT-062S2-AI Kit.
+23. Open a command prompt and change to the following directory *{Imagimob Capture Server cloned repo}/captureserver/examples/generic*.
+
+24. While the device is connected to the PC, run the following command in the command prompt after changing the 'xxx' to the COM port used by the developer kit.
+
+`python generic_local_capture_interface.py --data-filename magneto --output-dir data --protocol serial --COM-port COMxxx --baudrate 115200 --data-type f --samples-per-packet 3 --features 3`
+
+25. When collecting BMM data, the capture server will collect video for easy labeling in Imagimob Studio. Wait for the video stream to come up (this may take up to 10 seconds). Prints the following message on the screen:
+
+   **Figure 1. Capture Server options**
+
+   ![](images/capture_server_output.png)
+
+26. Press the on kit "USER BTN1" to trigger the device to start transmitting data, this is done to sync the capture server. Each time the command from Step 5 is run, reset the kit and press "USER BTN1" after the command is run.
+
+27. Press 'r' to start collecting Magnetometer data.
+
+28. After the Magnetometer data collection is complete, press 's' to stop collecting data. 
+
+29. Repeat steps 8 and 9 multiple times to generate multiple data files. After all the data collection is complete, press 'q' to quit the streamer.
+
+30. All the data is stored in the following directory *{Imagimob Capture Server cloned repo}/captureserver/examples/generic/data*. Each sample is stored in a folder with a date and time stamp, the folder includes the captured data as a .data file.
+
+31. The code example supports collecting Pressure and temprature data. To configure the application to collect Pressure and temprature data open source/config.h and set `INFERENCE_MODE_SELECT = DPS_COLLECTION`.
+
+32. Open a command prompt and change to the following directory *{Imagimob Capture Server cloned repo}/captureserver/examples/generic*.
+
+33. While the device is connected to the PC, run the following command in the command prompt after changing the 'xxx' to the COM port used by the developer kit.
+
+`python generic_local_capture_interface.py --data-filename Pressure --output-dir data --protocol serial --COM-port COMxxx --baudrate 1000000 --data-type f --samples-per-packet 2 --features 2 --video-disabled`
+
+34. Press the on kit "USER BTN1" to trigger the device to start transmitting data, this is done to sync the capture server. Each time the command from Step 5 is run, reset the kit and press "USER BTN1" after the command is run.
+
+35. Press 'r' to start collecting Pressure and temparature data.
+
+36. After the Pressure and Temparature data collection is complete, press 's' to stop collecting data. 
+
+37. Repeat steps 8 and 9 multiple times to generate multiple data files. After all the data collection is complete, press 'q' to quit the streamer.
+
+38. All the data is stored in the following directory *{Imagimob Capture Server cloned repo}/captureserver/examples/generic/data*. Each sample is stored in a folder with a date and time stamp, the folder includes the captured data as a .data file.
+
+39. The code example supports collecting Radar data. To configure the application to collect Radar data open source/config.h and set `INFERENCE_MODE_SELECT = RADAR_COLLECTION`.
+> **Note:** radar data collection is supported only on CY8CKIT-062S2-AI Kit
+40. Open a command prompt and change to the following directory *{Imagimob Capture Server cloned repo}/captureserver/examples/generic*.
+
+41. While the device is connected to the PC, run the following command in the command prompt after changing the 'xxx' to the COM port used by the developer kit.
+
+`python generic_local_capture_interface.py --data-filename radar --output-dir data --protocol serial --COM-port COMxxx --baudrate 1000000 --data-type h --samples-per-packet 128 --features 1 --video-disabled`
+
+42. Press the on kit "USER BTN1" to trigger the device to start transmitting data, this is done to sync the capture server. Each time the command from Step 5 is run, reset the kit and press "USER BTN1" after the command is run.
+
+43. Press 'r' to start collecting Radar data.
+
+44. After Radar data collection is complete, press 's' to stop collecting data. 
+
+45. Repeat steps 8 and 9 multiple times to generate multiple data files. After all the data collection is complete, press 'q' to quit the streamer.
+
+46. All the data is stored in the following directory *{Imagimob Capture Server cloned repo}/captureserver/examples/generic/data*. Each sample is stored in a folder with a date and time stamp, the folder includes the captured data as a .data file.
+
+31. Import the data into the Imagimob Studio. For more information, see the Imagimob's [Bring your own data](https://developer.imagimob.com/data-importing) documentation.
 
 ## Debugging
 
@@ -264,14 +333,23 @@ Follow the instructions in your preferred IDE.
 
 ## Design and implementation
 
-This code example allows collecting data from either an IMU or PDM/PCM using the [Imagimob's Capture Server](https://bitbucket.org/imagimob/captureserver/src/master/). The application supports transmitting data over UART to the Capture Server.
+This code example allows collecting data from one of this sensors - IMU, PDM/PCM, magnetometer, pressure sensor, radar sensor using the [Imagimob's Capture Server](https://bitbucket.org/imagimob/captureserver/src/master/). The application supports transmitting data over UART to the Capture Server.
 
 ### IMU capture
 
-The code example is designed to collect data from a motion sensor (BMX160 or BMI160). The data consists of the 3-axis accelerometer data obtained from the motion sensor. A timer is configured to interrupt at 50 Hz to sample the motion sensor. The interrupt handler reads all data from the sensor via I2C or SPI, the data is then transmitted over UART. The Capture Server collects this data and stores it in a .data file along with a video file that can both be imported into Imagimob Studio.
+The code example is designed to collect data from a motion sensor (BMX160/BMI160/BMI270). The data consists of the 3-axis accelerometer data obtained from the motion sensor. A timer is configured to interrupt at 50 Hz to sample the motion sensor. The interrupt handler reads all data from the sensor via I2C or SPI, the data is then transmitted over UART. The Capture Server collects this data and stores it in a .data file along with a video file that can both be imported into Imagimob Studio.
 
 ### PDM/PCM capture
 The code example can be configured to collect pulse density modulation to pulse code modulation audio data. The PDM/PCM is sampled at 16 kHz and an interrupt is generated after 1024 samples are collected. After collecting 1024 samples, the data is then transmitted over UART.
+
+### MAGNETOMETER capture
+The code example can be configured to collect data from magnetometer sensor (BMM350). The data consists of the 3-axis magnetometer data obtained from the magnetometer (BMM350) sensor. A timer is configured to interrupt at 50 Hz to sample the magnetometer (BMM350) sensor. The interrupt handler reads all data from the sensor via I2C, the data is then transmitted over UART.
+
+### PRESSURE capture
+The code example can be configured to collect data from Pressure sensor (DPS368). A timer is configured to interrupt at 50 Hz to sample the Pressure sensor. The interrupt handler reads all data from the sensor via I2C, the data is then transmitted over UART.
+
+### RADAR capture
+The code example can be configured to collect data from Radar sensor (BGT60TR13C). A timer is configured to interrupt at 50 Hz to sample the Radar sensor. The interrupt handler reads all data from the sensor via SPI, the data is then transmitted over UART.
 
 ### Files and folders
 
@@ -333,6 +411,7 @@ Document title: *CE238470* - *Machine learning: Imagimob data collection*
  Version | Description of change
  ------- | ---------------------
  1.0.0   | New code example
+ 1.1.0   | Added Support for CY8CKIT-062S2-AI
 <br>
 
 
@@ -344,7 +423,7 @@ The Bluetooth&reg; word mark and logos are registered trademarks owned by Blueto
 
 ---------------------------------------------------------
 
-© Cypress Semiconductor Corporation, 2023. This document is the property of Cypress Semiconductor Corporation, an Infineon Technologies company, and its affiliates ("Cypress").  This document, including any software or firmware included or referenced in this document ("Software"), is owned by Cypress under the intellectual property laws and treaties of the United States and other countries worldwide.  Cypress reserves all rights under such laws and treaties and does not, except as specifically stated in this paragraph, grant any license under its patents, copyrights, trademarks, or other intellectual property rights.  If the Software is not accompanied by a license agreement and you do not otherwise have a written agreement with Cypress governing the use of the Software, then Cypress hereby grants you a personal, non-exclusive, nontransferable license (without the right to sublicense) (1) under its copyright rights in the Software (a) for Software provided in source code form, to modify and reproduce the Software solely for use with Cypress hardware products, only internally within your organization, and (b) to distribute the Software in binary code form externally to end users (either directly or indirectly through resellers and distributors), solely for use on Cypress hardware product units, and (2) under those claims of Cypress's patents that are infringed by the Software (as provided by Cypress, unmodified) to make, use, distribute, and import the Software solely for use with Cypress hardware products.  Any other use, reproduction, modification, translation, or compilation of the Software is prohibited.
+© Cypress Semiconductor Corporation, 2024. This document is the property of Cypress Semiconductor Corporation, an Infineon Technologies company, and its affiliates ("Cypress").  This document, including any software or firmware included or referenced in this document ("Software"), is owned by Cypress under the intellectual property laws and treaties of the United States and other countries worldwide.  Cypress reserves all rights under such laws and treaties and does not, except as specifically stated in this paragraph, grant any license under its patents, copyrights, trademarks, or other intellectual property rights.  If the Software is not accompanied by a license agreement and you do not otherwise have a written agreement with Cypress governing the use of the Software, then Cypress hereby grants you a personal, non-exclusive, nontransferable license (without the right to sublicense) (1) under its copyright rights in the Software (a) for Software provided in source code form, to modify and reproduce the Software solely for use with Cypress hardware products, only internally within your organization, and (b) to distribute the Software in binary code form externally to end users (either directly or indirectly through resellers and distributors), solely for use on Cypress hardware product units, and (2) under those claims of Cypress's patents that are infringed by the Software (as provided by Cypress, unmodified) to make, use, distribute, and import the Software solely for use with Cypress hardware products.  Any other use, reproduction, modification, translation, or compilation of the Software is prohibited.
 <br>
 TO THE EXTENT PERMITTED BY APPLICABLE LAW, CYPRESS MAKES NO WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, WITH REGARD TO THIS DOCUMENT OR ANY SOFTWARE OR ACCOMPANYING HARDWARE, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.  No computing device can be absolutely secure.  Therefore, despite security measures implemented in Cypress hardware or software products, Cypress shall have no liability arising out of any security breach, such as unauthorized access to or use of a Cypress product. CYPRESS DOES NOT REPRESENT, WARRANT, OR GUARANTEE THAT CYPRESS PRODUCTS, OR SYSTEMS CREATED USING CYPRESS PRODUCTS, WILL BE FREE FROM CORRUPTION, ATTACK, VIRUSES, INTERFERENCE, HACKING, DATA LOSS OR THEFT, OR OTHER SECURITY INTRUSION (collectively, "Security Breach").  Cypress disclaims any liability relating to any Security Breach, and you shall and hereby do release Cypress from any claim, damage, or other liability arising from any Security Breach.  In addition, the products described in these materials may contain design defects or errors known as errata which may cause the product to deviate from published specifications. To the extent permitted by applicable law, Cypress reserves the right to make changes to this document without further notice. Cypress does not assume any liability arising out of the application or use of any product or circuit described in this document. Any information provided in this document, including any sample design information or programming code, is provided only for reference purposes.  It is the responsibility of the user of this document to properly design, program, and test the functionality and safety of any application made of this information and any resulting product.  "High-Risk Device" means any device or system whose failure could cause personal injury, death, or property damage.  Examples of High-Risk Devices are weapons, nuclear installations, surgical implants, and other medical devices.  "Critical Component" means any component of a High-Risk Device whose failure to perform can be reasonably expected to cause, directly or indirectly, the failure of the High-Risk Device, or to affect its safety or effectiveness.  Cypress is not liable, in whole or in part, and you shall and hereby do release Cypress from any claim, damage, or other liability arising from any use of a Cypress product as a Critical Component in a High-Risk Device. You shall indemnify and hold Cypress, including its affiliates, and its directors, officers, employees, agents, distributors, and assigns harmless from and against all claims, costs, damages, and expenses, arising out of any claim, including claims for product liability, personal injury or death, or property damage arising from any use of a Cypress product as a Critical Component in a High-Risk Device. Cypress products are not intended or authorized for use as a Critical Component in any High-Risk Device except to the limited extent that (i) Cypress's published data sheet for the product explicitly states Cypress has qualified the product for use in a specific High-Risk Device, or (ii) Cypress has given you advance written authorization to use the product as a Critical Component in the specific High-Risk Device and you have signed a separate indemnification agreement.
 <br>
